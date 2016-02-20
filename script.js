@@ -1,7 +1,14 @@
-var SLICES_PER_SCREEN = 10;
+var SLICES_PER_SCREEN = 5;
 var SPRING = 0.98;		// Speed kept per frame
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_FRICTION = 1;
+var COLORS = [
+	"#81a8c8",
+	"#afca61",
+	"#db583d",
+	"#5bab51",
+	"#fcce70",
+];
 
 
 var ctx = document.querySelector(".maincanvas").getContext("2d");
@@ -32,6 +39,11 @@ window.addEventListener("resize", update_dim);
 
 function update_positions(deltatime) {
 	appstate.position += appstate.speed * deltatime;
+	if(appstate.position < 0) {
+		appstate.position = 0;
+		appstate.speed = 0;
+		return
+	}
 	appstate.speed *= SPRING;
 	if(Math.abs(appstate.speed) < SLIPSTICK) {
 		appstate.speed = 0;
@@ -42,7 +54,7 @@ function render_slices() {
 	for(var i = 0; i < SLICES_PER_SCREEN + 1; i++) {
 		var slice_number = Math.floor(appstate.position + i);
 		var slice_position = slice_number - appstate.position;
-		ctx.fillStyle = slice_number % 2 == 0 ? "green" : "blue";
+		ctx.fillStyle = COLORS[slice_number % COLORS.length];
 		ctx.fillRect(0, slice_position * dim.slice_height, dim.width, dim.slice_height);
 	}
 }
