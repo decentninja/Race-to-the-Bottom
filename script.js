@@ -35,9 +35,13 @@ function render_slices() {
 	}
 }
 
-window.addEventListener("mousewheel", function(e) {
+
+function scroll(e) {
 	appstate.speed += MAXIMUM_ADDED_SPEED_PER_SCROLL;
-});
+}
+
+window.addEventListener("touchmove", scroll):
+window.addEventListener("wheel", scroll):
 
 var lastframetime = Date.now();
 function update() {
