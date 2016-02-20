@@ -2,6 +2,7 @@ var SLICES_PER_SCREEN = 5;
 var SPRING = 0.98;		// Speed kept per frame
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_FRICTION = 1;
+var MAX_MUSIC_SPEED = 3;
 var COLORS = [
 	"#81a8c8",
 	"#afca61",
@@ -12,6 +13,7 @@ var COLORS = [
 
 
 var ctx = document.querySelector(".maincanvas").getContext("2d");
+var maintrack = document.querySelector(".maintrack");
 
 var dpi = window.devicePixelRatio;
 if(dpi) ctx.scale(dpi, dpi);
@@ -64,6 +66,7 @@ window.addEventListener("touchstart", function(e) {
 	start_touch = e.changedTouches[0].clientY;
 	touch_time = new Date();
 	original_speed = appstate.speed;
+	maintrack.play();
 });
 
 window.addEventListener("touchmove", function(e) {
@@ -79,6 +82,11 @@ window.addEventListener("wheel", function(e) {
 	appstate.speed += e.deltaY / dim.slice_height * FINGER_FRICTION;
 });
 
+function update_audio() {
+	maintrack.volume = Math.min(1, Math.max(0, appstate.speed/100));
+	maintrack.playbackRate = Math.min(MAX_MUSIC_SPEED, Math.max(1, appstate.speed/50));
+}
+
 var lastframetime = Date.now();
 function update() {
 	var now = Date.now();
@@ -86,6 +94,7 @@ function update() {
 	lastframetime = now;
 	update_positions(deltatime);
 	render_slices(deltatime);
+	update_audio();
 	window.requestAnimationFrame(update);
 }
 
