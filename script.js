@@ -1,11 +1,15 @@
 var SLICES_PER_SCREEN = 5;
-var SPRING = 0.98;		// Speed kept per frame
+var SPRING = 0.98;		// Speed kept per frame when in sweetspot
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_FRICTION = 1;
 var MAX_MUSIC_SPEED = 3;
 var TEXT_FONT = "arial";
 var TEXT_SIZE = 14;				// Corrected for DPI ie same as browser "pixels"
 var TEXT_COLOR = "white";
+var SWEETSPOT_ANGLE_CENTRUM = 0;
+var SWEETSPOT_POSSIBLE_MAX_ANGLE = 90; // With ANGLE_CENTRUM in the middle
+var SWEETSPOT_WIGGLEROOM = 5;
+var SWEETSPOT_TIME = 5;	// seconds in sweetspot before change
 var COLORS = [
 	"#81a8c8",
 	"#afca61",
@@ -14,6 +18,7 @@ var COLORS = [
 	"#fcce70",
 ];
 
+var debug = window.location.href.indexOf("debug") != -1;
 
 var ctx = document.querySelector(".maincanvas").getContext("2d");
 var maintrack = document.querySelector(".maintrack");
@@ -21,7 +26,11 @@ var maintrack = document.querySelector(".maintrack");
 
 var appstate = {
 	position: 0,	// In slices
-	speed: 0		// In slices per second
+	speed: 0,		// In slices per second
+	in_sweetspot: false,
+	sweetspot_angle: 0,
+	sweetspot_time: 0,
+	orientation: 0
 };
 
 var dim = {
@@ -41,10 +50,24 @@ function update_dim() {
 	dim.height *= 1/dim.dpi;
 	dim.slice_height = dim.height / SLICES_PER_SCREEN;
 }
-
 update_dim();
-
 window.addEventListener("resize", update_dim);
+
+function pick_sweetspot() {
+	appstate.sweetspot_angle = SWEETSPOT_ANGLE_CENTRUM + Math.random() * SWEETSPOT_POSSIBLE_MAX_ANGLE;
+}
+pick_sweetspot();
+
+function update_sweetspot(deltatime) {
+	if(appstate.in_sweetspot) {
+		appstate.sweetspot_time += deltatime;
+	}
+	if(appstate.sweetspot_time > SWEETSPOT_TIME) {
+		appstate.sweetspot_time = 0;
+		appstate.in_sweetspot = false;
+		pick_sweetspot();
+	}
+}
 
 function update_positions(deltatime) {
 	appstate.position += appstate.speed * deltatime;
@@ -53,10 +76,16 @@ function update_positions(deltatime) {
 		appstate.speed = 0;
 		return
 	}
-	appstate.speed *= SPRING;
+	if(!appstate.in_sweetspot)
+		appstate.speed *= SPRING;
 	if(Math.abs(appstate.speed) < SLIPSTICK) {
 		appstate.speed = 0;
 	}
+}
+
+function update_audio() {
+	maintrack.volume = Math.min(1, Math.max(0, appstate.speed/100));
+	maintrack.playbackRate = (appstate.in_sweetspot ? -1 : 1) * Math.min(MAX_MUSIC_SPEED, Math.max(1, appstate.speed/50));
 }
 
 var start_touch, original_speed, touch_time;
@@ -80,11 +109,6 @@ window.addEventListener("wheel", function(e) {
 	appstate.speed += e.deltaY / dim.slice_height * FINGER_FRICTION;
 });
 
-function update_audio() {
-	maintrack.volume = Math.min(1, Math.max(0, appstate.speed/100));
-	maintrack.playbackRate = Math.min(MAX_MUSIC_SPEED, Math.max(1, appstate.speed/50));
-}
-
 function render_slices() {
 	for(var i = 0; i < SLICES_PER_SCREEN + 1; i++) {
 		var slice_number = Math.floor(appstate.position + i);
@@ -94,10 +118,35 @@ function render_slices() {
 	}
 }
 
+function render_blinking_sweetspot(deltatime) {
+	if(appstate.in_sweetspot && lastframetime % 3 == 0) {
+		ctx.fillStyle = COLORS[lastframetime % COLORS.length];
+		ctx.globalAlpha = 0.5;
+		ctx.fillRect(0, 0, dim.width, dim.height);
+		ctx.globalAlpha = 1;
+	}
+}
+
 function render_speedometer() {
 	ctx.font = TEXT_SIZE + "px " + TEXT_FONT;
 	ctx.fillStyle = TEXT_COLOR;
-	ctx.fillText(Math.round(appstate.speed) + " slices/second @ " + Math.round(appstate.position) + " slices", 10, 20, dim.width);
+	ctx.fillText(Math.round(appstate.speed) + " slices/second @ " + Math.floor(appstate.position) + " slices", 10, 20, dim.width);
+}
+
+if(window.DeviceOrientationEvent) {
+	window.addEventListener("deviceorientation", function(e) {
+		var b = appstate.orientation = e.beta;
+		appstate.in_sweetspot = appstate.sweetspot - SWEETSPOT_WIGGLEROOM <= b && b <= appstate.sweetspot + SWEETSPOT_WIGGLEROOM;
+	});
+}
+
+
+function render_debug() {
+	ctx.font = 12 + "px " + TEXT_FONT;
+	ctx.fillStyle = TEXT_COLOR;
+	JSON.stringify(appstate).split(',').forEach(function(line, i) {
+		ctx.fillText(line, 50, 50 + 14 * i, dim.width);
+	})
 }
 
 var lastframetime = Date.now();
@@ -105,10 +154,15 @@ function update() {
 	var now = Date.now();
 	var deltatime = (now - lastframetime) / 1000; // Time since last frame in seconds
 	lastframetime = now;
+	update_sweetspot(deltatime);
 	update_positions(deltatime);
 	render_slices(deltatime);
 	render_speedometer(deltatime);
+	render_blinking_sweetspot();
 	update_audio();
+	if(debug) {
+		render_debug();
+	}
 	window.requestAnimationFrame(update);
 }
 
