@@ -1,7 +1,7 @@
 var SLICES_PER_SCREEN = 5;
 var SPRING = 0.98;		// Speed kept per frame when in sweetspot
 var SLIPSTICK = 1;	// Minimum speed
-var FINGER_FRICTION = 1;
+var FINGER_GRIP = 1;
 var MAX_MUSIC_SPEED = 3;
 var TEXT_FONT = "arial";
 var TEXT_SIZE = 14;				// Corrected for DPI ie same as browser "pixels"
@@ -88,25 +88,23 @@ function update_audio() {
 	maintrack.playbackRate = Math.min(MAX_MUSIC_SPEED, Math.max(1, Math.abs(appstate.speed)/50));
 }
 
-var start_touch, original_speed, touch_time;
 window.addEventListener("touchstart", function(e) {
+	maintrack.play();	// Some platfrom may only play sound after first touch
+	appstate.speed = 0;
+});
+
+var start_touch, touch_time;
+window.addEventListener("touchmove", function(e) {
+	if(touch_time && start_touch) {
+		var deltatime = ((Date.now()) - touch_time) / 1000;
+		appstate.speed = (start_touch - e.changedTouches[0].clientY) / (dim.slice_height * deltatime) * FINGER_GRIP;
+	}
 	start_touch = e.changedTouches[0].clientY;
 	touch_time = new Date();
-	original_speed = appstate.speed;
-	maintrack.play();
-});
-
-window.addEventListener("touchmove", function(e) {
-	//appstate.speed = original_speed + (start_touch - e.changedTouches[0].clientY) / dim.slice_height;
-});
-
-window.addEventListener("touchend", function(e) {
-	var deltatime = ((Date.now()) - touch_time) / 1000;
-	appstate.speed = (start_touch - e.changedTouches[0].clientY) / (dim.slice_height * deltatime) * FINGER_FRICTION;
 });
 
 window.addEventListener("wheel", function(e) {
-	appstate.speed += e.deltaY / dim.slice_height * FINGER_FRICTION;
+	appstate.speed += e.deltaY / dim.slice_height * FINGER_GRIP;
 });
 
 function render_slices() {
