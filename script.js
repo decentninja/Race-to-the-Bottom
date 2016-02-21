@@ -135,7 +135,7 @@ function render_speedometer() {
 if(window.DeviceOrientationEvent) {
 	window.addEventListener("deviceorientation", function(e) {
 		var b = appstate.orientation = e.beta;
-		appstate.in_sweetspot = appstate.sweetspot - SWEETSPOT_WIGGLEROOM <= b && b <= appstate.sweetspot + SWEETSPOT_WIGGLEROOM;
+		appstate.in_sweetspot = Math.abs(appstate.sweetspot_angle - b) < SWEETSPOT_WIGGLEROOM;
 	});
 }
 
