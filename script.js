@@ -3,6 +3,9 @@ var SPRING = 0.98;		// Speed kept per frame
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_FRICTION = 1;
 var MAX_MUSIC_SPEED = 3;
+var TEXT_FONT = "arial";
+var TEXT_SIZE = 14;				// Corrected for DPI ie same as browser "pixels"
+var TEXT_COLOR = "white";
 var COLORS = [
 	"#81a8c8",
 	"#afca61",
@@ -15,8 +18,6 @@ var COLORS = [
 var ctx = document.querySelector(".maincanvas").getContext("2d");
 var maintrack = document.querySelector(".maintrack");
 
-var dpi = window.devicePixelRatio;
-if(dpi) ctx.scale(dpi, dpi);
 
 var appstate = {
 	position: 0,	// In slices
@@ -26,12 +27,18 @@ var appstate = {
 var dim = {
 	width: 0,
 	height: 0,
-	slice_height: 0
+	slice_height: 0,
+	dpi: 1
 };
 
 function update_dim() {
-	dim.width = ctx.canvas.width = window.innerWidth;
-	dim.height = ctx.canvas.height = window.innerHeight;
+	dim.dpi = window.devicePixelRatio || 1;
+	dim.width = ctx.canvas.width = window.innerWidth * dim.dpi;
+	dim.height = ctx.canvas.height = window.innerHeight * dim.dpi;
+	ctx.scale(dim.dpi, dim.dpi);
+	ctx.canvas.style.width = window.innerWidth + "px";
+	dim.width *= 1/dim.dpi;
+	dim.height *= 1/dim.dpi;
 	dim.slice_height = dim.height / SLICES_PER_SCREEN;
 }
 
@@ -49,15 +56,6 @@ function update_positions(deltatime) {
 	appstate.speed *= SPRING;
 	if(Math.abs(appstate.speed) < SLIPSTICK) {
 		appstate.speed = 0;
-	}
-}
-
-function render_slices() {
-	for(var i = 0; i < SLICES_PER_SCREEN + 1; i++) {
-		var slice_number = Math.floor(appstate.position + i);
-		var slice_position = slice_number - appstate.position;
-		ctx.fillStyle = COLORS[slice_number % COLORS.length];
-		ctx.fillRect(0, slice_position * dim.slice_height, dim.width, dim.slice_height);
 	}
 }
 
@@ -87,6 +85,21 @@ function update_audio() {
 	maintrack.playbackRate = Math.min(MAX_MUSIC_SPEED, Math.max(1, appstate.speed/50));
 }
 
+function render_slices() {
+	for(var i = 0; i < SLICES_PER_SCREEN + 1; i++) {
+		var slice_number = Math.floor(appstate.position + i);
+		var slice_position = slice_number - appstate.position;
+		ctx.fillStyle = COLORS[slice_number % COLORS.length];
+		ctx.fillRect(0, slice_position * dim.slice_height, dim.width, dim.slice_height);
+	}
+}
+
+function render_speedometer() {
+	ctx.font = TEXT_SIZE + "px " + TEXT_FONT;
+	ctx.fillStyle = TEXT_COLOR;
+	ctx.fillText(Math.round(appstate.speed) + " slices/second @ " + Math.round(appstate.position) + " slices", 10, 20, dim.width);
+}
+
 var lastframetime = Date.now();
 function update() {
 	var now = Date.now();
@@ -94,6 +107,7 @@ function update() {
 	lastframetime = now;
 	update_positions(deltatime);
 	render_slices(deltatime);
+	render_speedometer(deltatime);
 	update_audio();
 	window.requestAnimationFrame(update);
 }
