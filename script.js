@@ -84,8 +84,8 @@ function update_positions(deltatime) {
 }
 
 function update_audio() {
-	maintrack.volume = Math.min(1, Math.max(0, appstate.speed/100));
-	maintrack.playbackRate = (appstate.in_sweetspot ? -1 : 1) * Math.min(MAX_MUSIC_SPEED, Math.max(1, appstate.speed/50));
+	maintrack.volume = Math.min(1, Math.max(0, Math.abs(appstate.speed)/100));
+	maintrack.playbackRate = Math.min(MAX_MUSIC_SPEED, Math.max(1, Math.abs(appstate.speed)/50));
 }
 
 var start_touch, original_speed, touch_time;
