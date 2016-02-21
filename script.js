@@ -2,7 +2,8 @@ var SLICES_PER_SCREEN = 5;
 var SPRING = 0.98;		// Speed kept per frame when in sweetspot
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_GRIP = 1;
-var MAX_MUSIC_SPEED = 3;
+var MAX_MUSIC_SPEED = 2; 
+var MUSIC_EXTRA_FACTOR = 2;
 var TEXT_FONT = "arial";
 var TEXT_SIZE = 14;				// Corrected for DPI ie same as browser "pixels"
 var TEXT_COLOR = "white";
@@ -85,7 +86,7 @@ function update_positions(deltatime) {
 
 function update_audio() {
 	maintrack.volume = Math.min(1, Math.max(0, Math.abs(appstate.speed)/100));
-	maintrack.playbackRate = Math.min(MAX_MUSIC_SPEED, Math.max(1, Math.abs(appstate.speed)/50));
+	maintrack.playbackRate = MUSIC_EXTRA_FACTOR * Math.min(MAX_MUSIC_SPEED, Math.max(1, Math.abs(appstate.speed)/50));
 }
 
 window.addEventListener("touchstart", function(e) {
