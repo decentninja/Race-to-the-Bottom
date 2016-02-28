@@ -9,6 +9,8 @@ var MENU_COLOR = LOOSING_COLOR;
 var MENU_TEXT_COLOR = "white";
 var MENU_TEXT_SIZE = 20;
 var MENU_TEXT_FONT = "arial";
+var STANDSTILL_WARNING_TIME = 2;
+var STANDSTILL_GAMEOVER = 6;
 var COLORS = [
 	"#81a8c8",
 	"#afca61",
@@ -30,7 +32,8 @@ function setinitialstate() {
 		speed: 0,		// In slices per second
 		menu: false,
 		totaltime: 0,
-		fail_message: ""
+		fail_message: "",
+		standstill_time: 0
 	};
 }
 setinitialstate();
@@ -145,6 +148,10 @@ function update() {
 		update_positions(deltatime);
 		render_slices(deltatime);
 		update_audio();
+		update_standstill(deltatime);
+		if(appstate.standstill_time > STANDSTILL_WARNING_TIME) {
+			blinking_screen();
+		}
 		if(debug) {
 			render_debug();
 		}
@@ -166,3 +173,22 @@ function render_menu() {
 	ctx.textAlign = "left"; 
 }
 
+function blinking_screen(deltatime) {
+	if(lastframetime % 3 == 0) {
+		ctx.fillStyle = COLORS[lastframetime % COLORS.length];
+		ctx.globalAlpha = 0.5;
+		ctx.fillRect(0, 0, dim.width, dim.height);
+		ctx.globalAlpha = 1;
+	}
+}
+
+function update_standstill(deltatime) {
+	if(appstate.speed == 0) {
+		appstate.standstill_time += deltatime;
+	} else {
+		appstate.standstill_time = 0;
+	}
+	if(appstate.standstill_time > STANDSTILL_GAMEOVER) {
+		loose("You stood still for too long!");
+	}
+}
