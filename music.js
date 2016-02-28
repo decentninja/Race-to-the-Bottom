@@ -16,7 +16,7 @@ var tracks = {
 var current_track = "";
 
 var maintrack = {
-    update: function(appstate, deltatime) {
+    update: function(appstate) {
         if(appstate.menu) {
             for(var key in tracks) {
                 tracks[key].pause();
