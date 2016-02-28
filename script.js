@@ -82,7 +82,8 @@ function render_slices() {
 	for(var i = 0; i < SLICES_PER_SCREEN + 1; i++) {
 		var slice_number = Math.floor(appstate.position + i);
 		var slice_position = slice_number - appstate.position;
-		ctx.fillStyle = COLORS[Math.abs(slice_number % COLORS.length)];
+		var slide_randomized = Math.floor(Math.sin(slice_number) * 1000);
+		ctx.fillStyle = COLORS[Math.abs(slide_randomized % COLORS.length)];
 		ctx.fillRect(0, slice_position * dim.slice_height, dim.width, dim.slice_height);
 	}
 }
