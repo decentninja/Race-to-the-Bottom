@@ -2,15 +2,13 @@ var SLICES_PER_SCREEN = 5;
 var SPRING = 0.98;
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_GRIP = 1;
-var MAX_MUSIC_SPEED = 2; 
-var MUSIC_EXTRA_FACTOR = 2;
 var LOOSING_COLOR = "#db583d";
 var MENU_COLOR = LOOSING_COLOR;
 var MENU_TEXT_COLOR = "white";
 var MENU_TEXT_SIZE = 20;
 var MENU_TEXT_FONT = "arial";
 var STANDSTILL_WARNING_TIME = 2;
-var STANDSTILL_GAMEOVER = 6;
+var STANDSTILL_GAMEOVER = 4;
 var COLORS = [
 	"#81a8c8",
 	"#afca61",
@@ -22,8 +20,6 @@ var COLORS = [
 var debug = window.location.href.indexOf("debug") != -1;
 
 var ctx = document.querySelector(".maincanvas").getContext("2d");
-var maintrack = document.querySelector(".maintrack");
-
 
 var appstate = {};
 function setinitialstate() {
@@ -66,16 +62,10 @@ function update_positions(deltatime) {
 	}
 }
 
-function update_audio() {
-	maintrack.volume = Math.min(1, Math.max(0, Math.abs(appstate.speed)/100));
-	maintrack.playbackRate = MUSIC_EXTRA_FACTOR * Math.min(MAX_MUSIC_SPEED, Math.max(1, Math.abs(appstate.speed)/50));
-}
-
 window.addEventListener("touchstart", function(e) {
 	if(appstate.menu) {
 		unloose();
 	} else {
-		maintrack.play();	// Some platfrom may only play sound after first touch
 		appstate.speed = 0;
 		var hit_slice = Math.floor(appstate.position) + Math.floor(e.changedTouches[0].clientY / dim.slice_height);
 		if(slice_color(hit_slice) == LOOSING_COLOR) {
@@ -85,7 +75,6 @@ window.addEventListener("touchstart", function(e) {
 });
 
 function unloose() {
-	maintrack.play();
 	setinitialstate();
 }
 
@@ -93,7 +82,6 @@ function loose(message) {
 	appstate.menu = true;
 	appstate.fail_message = message;
 	appstate.speed = 0;
-	maintrack.pause();
 }
 
 var start_touch, touch_time;
@@ -141,13 +129,13 @@ function update() {
 	var now = Date.now();
 	var deltatime = (now - lastframetime) / 1000; // Time since last frame in seconds
 	lastframetime = now;
+	maintrack.update(appstate, deltatime);
 	if(appstate.menu) {
 		render_menu();
 	} else {
 		appstate.totaltime += deltatime;
 		update_positions(deltatime);
 		render_slices(deltatime);
-		update_audio();
 		update_standstill(deltatime);
 		if(appstate.standstill_time > STANDSTILL_WARNING_TIME) {
 			blinking_screen();
