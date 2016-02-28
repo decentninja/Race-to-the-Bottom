@@ -4,13 +4,15 @@ var SLIPSTICK = 1;	// Minimum speed
 var FINGER_GRIP = 1;
 var MAX_MUSIC_SPEED = 2; 
 var MUSIC_EXTRA_FACTOR = 2;
-var TEXT_FONT = "arial";
-var TEXT_SIZE = 14;				// Corrected for DPI ie same as browser "pixels"
-var TEXT_COLOR = "white";
+var LOOSING_COLOR = "#db583d";
+var MENU_COLOR = LOOSING_COLOR;
+var MENU_TEXT_COLOR = "white";
+var MENU_TEXT_SIZE = 30;
+var MENU_TEXT_FONT = "arial";
 var COLORS = [
 	"#81a8c8",
 	"#afca61",
-	"#db583d",
+	"#db583d", // red
 	"#5bab51",
 	"#fcce70",
 ];
@@ -21,10 +23,16 @@ var ctx = document.querySelector(".maincanvas").getContext("2d");
 var maintrack = document.querySelector(".maintrack");
 
 
-var appstate = {
-	position: 0,	// In slices
-	speed: 0		// In slices per second
-};
+var appstate = {};
+function setinitialstate() {
+	appstate = {
+		position: 0,	// In slices
+		speed: 0,		// In slices per second
+		menu: false,
+		fail_message: ""
+	};
+}
+setinitialstate();
 
 var dim = {
 	width: 0,
@@ -60,9 +68,28 @@ function update_audio() {
 }
 
 window.addEventListener("touchstart", function(e) {
-	maintrack.play();	// Some platfrom may only play sound after first touch
-	appstate.speed = 0;
+	if(appstate.menu) {
+		unloose();
+	} else {
+		maintrack.play();	// Some platfrom may only play sound after first touch
+		appstate.speed = 0;
+		var hit_slice = Math.floor(appstate.position) + Math.floor(e.changedTouches[0].clientY / dim.slice_height);
+		if(slice_color(hit_slice) == LOOSING_COLOR) {
+			loose("Don't touch RED!");
+		}
+	}
 });
+
+function unloose() {
+	maintrack.play();
+	setinitialstate();
+}
+
+function loose(message) {
+	appstate.menu = true;
+	appstate.fail_message = message;
+	maintrack.pause();
+}
 
 var start_touch, touch_time;
 window.addEventListener("touchmove", function(e) {
@@ -78,18 +105,23 @@ window.addEventListener("wheel", function(e) {
 	appstate.speed += e.deltaY / dim.slice_height * FINGER_GRIP;
 });
 
+function slice_color(slice_number) {
+	var slide_randomized = Math.floor(Math.sin(slice_number) * 1000);
+	return COLORS[Math.abs(slide_randomized % COLORS.length)];
+}
+
 function render_slices() {
 	for(var i = 0; i < SLICES_PER_SCREEN + 1; i++) {
 		var slice_number = Math.floor(appstate.position + i);
 		var slice_position = slice_number - appstate.position;
-		ctx.fillStyle = COLORS[Math.abs(slice_number % COLORS.length)];
+		ctx.fillStyle = slice_color(slice_number);
 		ctx.fillRect(0, slice_position * dim.slice_height, dim.width, dim.slice_height);
 	}
 }
 
 function render_debug() {
-	ctx.font = 12 + "px " + TEXT_FONT;
-	ctx.fillStyle = TEXT_COLOR;
+	ctx.font = "12px arial";
+	ctx.fillStyle = "white";
 	JSON.stringify(appstate).split(',').forEach(function(line, i) {
 		ctx.fillText(line, 50, 50 + 14 * i, dim.width);
 	})
@@ -100,27 +132,29 @@ function update() {
 	var now = Date.now();
 	var deltatime = (now - lastframetime) / 1000; // Time since last frame in seconds
 	lastframetime = now;
-	update_positions(deltatime);
-	render_slices(deltatime);
-	update_audio();
-	if(debug) {
-		render_debug();
+	if(appstate.menu) {
+		render_menu();
+	} else {
+		update_positions(deltatime);
+		render_slices(deltatime);
+		update_audio();
+		if(debug) {
+			render_debug();
+		}
 	}
 	window.requestAnimationFrame(update);
 }
 
 window.requestAnimationFrame(update);
 
-window.addEventListener("click", function(e) {
-	e.preventDefault();
-	var elem = document.documentElement;
-	if (elem.requestFullscreen) {
-		elem.requestFullscreen();
-	} else if (elem.msRequestFullscreen) {
-		elem.msRequestFullscreen();
-	} else if (elem.mozRequestFullScreen) {
-		elem.mozRequestFullScreen();
-	} else if (elem.webkitRequestFullscreen) {
-		elem.webkitRequestFullscreen();
-	}
-});
+function render_menu() {
+	ctx.fillStyle = MENU_COLOR;
+	ctx.fillRect(0, 0, dim.width, dim.height);
+	ctx.fillStyle = MENU_TEXT_COLOR;
+	ctx.textAlign = "center"; 
+	ctx.font = MENU_TEXT_SIZE + "px " + MENU_TEXT_FONT;
+	ctx.fillText(appstate.fail_message, dim.width / 2, dim.height / 4);
+	ctx.fillText("Click to restart", dim.width / 2, 2 * dim.height / 4);
+	ctx.textAlign = "left"; 
+}
+
