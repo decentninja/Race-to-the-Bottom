@@ -124,7 +124,7 @@ function render_debug() {
 	JSON.stringify(appstate).split(',').forEach(function(line, i) {
 		ctx.fillText(line, 50, 50 + 14 * i, dim.width);
 	})
-	ctx.fillText(navigator.userAgent, 0, 0);
+	ctx.fillText(navigator.userAgent, 14, 14);
 }
 
 var lastframetime = Date.now();
