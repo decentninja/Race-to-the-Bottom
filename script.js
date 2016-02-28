@@ -63,6 +63,7 @@ function update_positions(deltatime) {
 }
 
 window.addEventListener("touchstart", function(e) {
+	e.preventDefault(); 
 	maintrack.update(appstate);
 	if(appstate.menu) {
 		unloose();
