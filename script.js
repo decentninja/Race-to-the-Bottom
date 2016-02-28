@@ -1,5 +1,5 @@
 var SLICES_PER_SCREEN = 5;
-var SPRING = 0.98;		// Speed kept per frame when in sweetspot
+var SPRING = 0.98;
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_GRIP = 1;
 var MAX_MUSIC_SPEED = 2; 
@@ -7,10 +7,6 @@ var MUSIC_EXTRA_FACTOR = 2;
 var TEXT_FONT = "arial";
 var TEXT_SIZE = 14;				// Corrected for DPI ie same as browser "pixels"
 var TEXT_COLOR = "white";
-var SWEETSPOT_ANGLE_CENTRUM = 0;
-var SWEETSPOT_POSSIBLE_MAX_ANGLE = 90; // With ANGLE_CENTRUM in the middle
-var SWEETSPOT_WIGGLEROOM = 5;
-var SWEETSPOT_TIME = 5;	// seconds in sweetspot before change
 var COLORS = [
 	"#81a8c8",
 	"#afca61",
@@ -27,11 +23,7 @@ var maintrack = document.querySelector(".maintrack");
 
 var appstate = {
 	position: 0,	// In slices
-	speed: 0,		// In slices per second
-	in_sweetspot: false,
-	sweetspot_angle: 0,
-	sweetspot_time: 0,
-	orientation: 0
+	speed: 0		// In slices per second
 };
 
 var dim = {
@@ -54,22 +46,6 @@ function update_dim() {
 update_dim();
 window.addEventListener("resize", update_dim);
 
-function pick_sweetspot() {
-	appstate.sweetspot_angle = SWEETSPOT_ANGLE_CENTRUM + Math.random() * SWEETSPOT_POSSIBLE_MAX_ANGLE;
-}
-pick_sweetspot();
-
-function update_sweetspot(deltatime) {
-	if(appstate.in_sweetspot) {
-		appstate.sweetspot_time += deltatime;
-	}
-	if(appstate.sweetspot_time > SWEETSPOT_TIME) {
-		appstate.sweetspot_time = 0;
-		appstate.in_sweetspot = false;
-		pick_sweetspot();
-	}
-}
-
 function update_positions(deltatime) {
 	appstate.position += appstate.speed * deltatime;
 	if(appstate.position < 0) {
@@ -77,8 +53,7 @@ function update_positions(deltatime) {
 		appstate.speed = 0;
 		return
 	}
-	if(!appstate.in_sweetspot)
-		appstate.speed *= SPRING;
+	appstate.speed *= SPRING;
 	if(Math.abs(appstate.speed) < SLIPSTICK) {
 		appstate.speed = 0;
 	}
@@ -117,29 +92,6 @@ function render_slices() {
 	}
 }
 
-function render_blinking_sweetspot(deltatime) {
-	if(appstate.in_sweetspot && lastframetime % 3 == 0) {
-		ctx.fillStyle = COLORS[lastframetime % COLORS.length];
-		ctx.globalAlpha = 0.5;
-		ctx.fillRect(0, 0, dim.width, dim.height);
-		ctx.globalAlpha = 1;
-	}
-}
-
-function render_speedometer() {
-	ctx.font = TEXT_SIZE + "px " + TEXT_FONT;
-	ctx.fillStyle = TEXT_COLOR;
-	ctx.fillText(Math.round(appstate.speed) + " slices/second @ " + Math.floor(appstate.position) + " slices", 10, 20, dim.width);
-}
-
-if(window.DeviceOrientationEvent) {
-	window.addEventListener("deviceorientation", function(e) {
-		var b = appstate.orientation = e.beta;
-		appstate.in_sweetspot = Math.abs(appstate.sweetspot_angle - b) < SWEETSPOT_WIGGLEROOM;
-	});
-}
-
-
 function render_debug() {
 	ctx.font = 12 + "px " + TEXT_FONT;
 	ctx.fillStyle = TEXT_COLOR;
@@ -153,11 +105,8 @@ function update() {
 	var now = Date.now();
 	var deltatime = (now - lastframetime) / 1000; // Time since last frame in seconds
 	lastframetime = now;
-	update_sweetspot(deltatime);
 	update_positions(deltatime);
 	render_slices(deltatime);
-	render_speedometer(deltatime);
-	render_blinking_sweetspot();
 	update_audio();
 	if(debug) {
 		render_debug();
