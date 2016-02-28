@@ -48,11 +48,6 @@ window.addEventListener("resize", update_dim);
 
 function update_positions(deltatime) {
 	appstate.position += appstate.speed * deltatime;
-	if(appstate.position < 0) {
-		appstate.position = 0;
-		appstate.speed = 0;
-		return
-	}
 	appstate.speed *= SPRING;
 	if(Math.abs(appstate.speed) < SLIPSTICK) {
 		appstate.speed = 0;
@@ -87,7 +82,7 @@ function render_slices() {
 	for(var i = 0; i < SLICES_PER_SCREEN + 1; i++) {
 		var slice_number = Math.floor(appstate.position + i);
 		var slice_position = slice_number - appstate.position;
-		ctx.fillStyle = COLORS[slice_number % COLORS.length];
+		ctx.fillStyle = COLORS[Math.abs(slice_number % COLORS.length)];
 		ctx.fillRect(0, slice_position * dim.slice_height, dim.width, dim.slice_height);
 	}
 }
