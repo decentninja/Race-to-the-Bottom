@@ -17,7 +17,7 @@ var current_track = "";
 
 var maintrack = {
     update: function(appstate) {
-        var mobile = /android|iphone|ipad/i.test(navigator.userAgent);
+        var mobile = true;///android|iphone|ipad/i.test(navigator.userAgent);
         if(!mobile) {
             if(appstate.menu) {
                 for(var key in tracks) {
@@ -51,10 +51,8 @@ var maintrack = {
                 }
             }
         }
+        
     }
 };
 
 
-window.onerror = function(e) {
-    alert(e);
-};
