@@ -7,7 +7,7 @@ var MUSIC_EXTRA_FACTOR = 2;
 var LOOSING_COLOR = "#db583d";
 var MENU_COLOR = LOOSING_COLOR;
 var MENU_TEXT_COLOR = "white";
-var MENU_TEXT_SIZE = 30;
+var MENU_TEXT_SIZE = 20;
 var MENU_TEXT_FONT = "arial";
 var COLORS = [
 	"#81a8c8",
@@ -29,6 +29,7 @@ function setinitialstate() {
 		position: 0,	// In slices
 		speed: 0,		// In slices per second
 		menu: false,
+		totaltime: 0,
 		fail_message: ""
 	};
 }
@@ -88,21 +89,26 @@ function unloose() {
 function loose(message) {
 	appstate.menu = true;
 	appstate.fail_message = message;
+	appstate.speed = 0;
 	maintrack.pause();
 }
 
 var start_touch, touch_time;
 window.addEventListener("touchmove", function(e) {
-	if(touch_time && start_touch) {
-		var deltatime = ((Date.now()) - touch_time) / 1000;
-		appstate.speed = (start_touch - e.changedTouches[0].clientY) / (dim.slice_height * deltatime) * FINGER_GRIP;
+	if(!appstate.menu) { 
+		if(touch_time && start_touch) {
+			var deltatime = ((Date.now()) - touch_time) / 1000;
+			appstate.speed = (start_touch - e.changedTouches[0].clientY) / (dim.slice_height * deltatime) * FINGER_GRIP;
+		}
+		start_touch = e.changedTouches[0].clientY;
+		touch_time = new Date();
 	}
-	start_touch = e.changedTouches[0].clientY;
-	touch_time = new Date();
 });
 
 window.addEventListener("wheel", function(e) {
-	appstate.speed += e.deltaY / dim.slice_height * FINGER_GRIP;
+	if(!appstate.menu) { 
+		appstate.speed += e.deltaY / dim.slice_height * FINGER_GRIP;
+	}
 });
 
 function slice_color(slice_number) {
@@ -135,6 +141,7 @@ function update() {
 	if(appstate.menu) {
 		render_menu();
 	} else {
+		appstate.totaltime += deltatime;
 		update_positions(deltatime);
 		render_slices(deltatime);
 		update_audio();
@@ -153,8 +160,9 @@ function render_menu() {
 	ctx.fillStyle = MENU_TEXT_COLOR;
 	ctx.textAlign = "center"; 
 	ctx.font = MENU_TEXT_SIZE + "px " + MENU_TEXT_FONT;
-	ctx.fillText(appstate.fail_message, dim.width / 2, dim.height / 4);
-	ctx.fillText("Click to restart", dim.width / 2, 2 * dim.height / 4);
+	ctx.fillText(appstate.fail_message, dim.width / 2, dim.height / 4, dim.width -10);
+	ctx.fillText(Math.floor(appstate.position) + " slices @ " + Math.floor(appstate.position / appstate.totaltime) + " avarage slices / second", dim.width / 2, 2 * dim.height / 4, dim.width - 10);
+	ctx.fillText("Click to restart", dim.width / 2, 3 * dim.height / 4, dim.width - 10);
 	ctx.textAlign = "left"; 
 }
 
