@@ -81,7 +81,7 @@ function start(x, y) {
 	}
 	if(appstate.running) {
 		appstate.speed = 0;
-		var hit_slice = Math.floor(appstate.position) + Math.floor(y / dim.slice_height);
+		var hit_slice = Math.floor(appstate.position + y / dim.slice_height);
 		if(slice_color(hit_slice) == DEATH_COLOR) {
 			appstate.death_position = [x, y];
 			loose("You touched RED!");
