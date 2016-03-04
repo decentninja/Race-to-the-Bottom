@@ -1,12 +1,12 @@
 var SLICES_PER_SCREEN = 5;
 var SPRING = 0.98;
-var SLIPSTICK = 1;	// Minimum speed
+var SLIPSTICK = 0.5;	// Minimum speed
 var FINGER_GRIP = 1;
 var MENU_TEXT_COLOR = "white";
 var MENU_TEXT_SIZE = 20;
 var MENU_TEXT_FONT = "arial";
-var STANDSTILL_WARNING_TIME = 2;
-var STANDSTILL_GAMEOVER = 4;
+var STANDSTILL_WARNING_TIME = 0;
+var STANDSTILL_GAMEOVER = 1;
 var DEATH_COLOR = "#db583d";
 var MENU_COLOR = DEATH_COLOR;
 var COLORS = [
@@ -33,7 +33,8 @@ function setinitialstate() {
 		menu: false,
 		totaltime: 0,
 		fail_message: "",
-		standstill_time: 0
+		standstill_time: 0,
+		first_scroll: false		// Can't loose until first scroll
 	};
 }
 setinitialstate();
@@ -102,6 +103,13 @@ window.addEventListener("touchmove", function(e) {
 	}
 });
 
+window.addEventListener("touchend", function(e) {
+	if(!appstate.menu) { 
+		if(!appstate.first_scroll)
+			appstate.first_scroll = true;
+	}
+});
+
 window.addEventListener("wheel", function(e) {
 	if(!appstate.menu) { 
 		appstate.speed += e.deltaY / dim.slice_height * FINGER_GRIP;
@@ -145,7 +153,7 @@ function update() {
 		update_positions(deltatime);
 		render_slices(deltatime);
 		update_standstill(deltatime);
-		if(appstate.standstill_time > STANDSTILL_WARNING_TIME) {
+		if(appstate.first_scroll && appstate.standstill_time > STANDSTILL_WARNING_TIME) {
 			blinking_screen();
 		}
 		if(debug) {
@@ -184,7 +192,7 @@ function update_standstill(deltatime) {
 	} else {
 		appstate.standstill_time = 0;
 	}
-	if(appstate.standstill_time > STANDSTILL_GAMEOVER) {
+	if(appstate.first_scroll && appstate.standstill_time > STANDSTILL_GAMEOVER) {
 		loose("You stood still for too long!");
 	}
 }
