@@ -18,7 +18,7 @@ var COLORS = [
 	"#fcce70"
 ];
 var SCREENS_UNTIL_CHANCE_DEATHSLICE_ADDED = 100;
-var MAX_DEATH_SLICE_CHANCE = 0.9;
+var MAX_DEATH_SLICE_CHANCE = 0.95;
 var SEED = 13;
 
 var debug = window.location.href.indexOf("debug") != -1;
@@ -67,18 +67,28 @@ function update_positions(deltatime) {
 	}
 }
 
-window.addEventListener("touchstart", function(e) {
-	e.preventDefault(); 
+function start(x, y) {
 	maintrack.update(appstate);
 	if(appstate.menu) {
 		unloose();
 	} else {
 		appstate.speed = 0;
-		var hit_slice = Math.floor(appstate.position) + Math.floor(e.changedTouches[0].clientY / dim.slice_height);
+		var hit_slice = Math.floor(appstate.position) + Math.floor(y / dim.slice_height);
 		if(slice_color(hit_slice) == DEATH_COLOR) {
 			loose("You touched RED!");
 		}
 	}
+}
+
+var mousedown = false;
+window.addEventListener("mousedown", function(e) {
+	mousedown = true;
+	start(e.clientX, e.clientY);
+});
+
+window.addEventListener("touchstart", function(e) {
+	e.preventDefault(); 
+	start(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
 });
 
 function unloose() {
@@ -91,30 +101,39 @@ function loose(message) {
 	appstate.speed = 0;
 }
 
+
 var start_touch, touch_time;
-window.addEventListener("touchmove", function(e) {
+function move(x, y) {
 	if(!appstate.menu) { 
 		if(touch_time && start_touch) {
 			var deltatime = ((Date.now()) - touch_time) / 1000;
-			appstate.speed = (start_touch - e.changedTouches[0].clientY) / (dim.slice_height * deltatime) * FINGER_GRIP;
+			appstate.speed = (start_touch - y) / (dim.slice_height * deltatime) * FINGER_GRIP;
 		}
-		start_touch = e.changedTouches[0].clientY;
+		start_touch = y;
 		touch_time = new Date();
 	}
+}
+
+window.addEventListener("mousemove", function(e) {
+	if(mousedown) {
+		move(e.clientX, e.clientY);
+	}
+});
+window.addEventListener("touchmove", function(e) {
+	move(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+});
+window.addEventListener("touchend", first_scroll);
+window.addEventListener("mouseup", function(e) {
+	mousedown = false;
+	first_scroll();
 });
 
-window.addEventListener("touchend", function(e) {
+function first_scroll() {
 	if(!appstate.menu) { 
 		if(!appstate.first_scroll)
 			appstate.first_scroll = true;
 	}
-});
-
-window.addEventListener("wheel", function(e) {
-	if(!appstate.menu) { 
-		appstate.speed += e.deltaY / dim.slice_height * FINGER_GRIP;
-	}
-});
+}
 
 function slice_color(slice_number) {
 	var slice_randomized = Math.abs(Math.sin(slice_number * 1000 + SEED));
