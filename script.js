@@ -2,20 +2,24 @@ var SLICES_PER_SCREEN = 5;
 var SPRING = 0.98;
 var SLIPSTICK = 1;	// Minimum speed
 var FINGER_GRIP = 1;
-var LOOSING_COLOR = "#db583d";
-var MENU_COLOR = LOOSING_COLOR;
 var MENU_TEXT_COLOR = "white";
 var MENU_TEXT_SIZE = 20;
 var MENU_TEXT_FONT = "arial";
 var STANDSTILL_WARNING_TIME = 2;
 var STANDSTILL_GAMEOVER = 4;
+var DEATH_COLOR = "#db583d";
+var MENU_COLOR = DEATH_COLOR;
 var COLORS = [
-	"#81a8c8",
-	"#afca61",
-	"#db583d", // red
 	"#5bab51",
-	"#fcce70",
+	"#81a8c8",
+	"#9b6cdd",
+	"#afca61",
+	"#be67ae",
+	"#fcce70"
 ];
+var SCREENS_UNTIL_CHANCE_DEATHSLICE_ADDED = 100;
+var MAX_DEATH_SLICE_CHANCE = 0.9;
+var SEED = 13;
 
 var debug = window.location.href.indexOf("debug") != -1;
 
@@ -70,8 +74,8 @@ window.addEventListener("touchstart", function(e) {
 	} else {
 		appstate.speed = 0;
 		var hit_slice = Math.floor(appstate.position) + Math.floor(e.changedTouches[0].clientY / dim.slice_height);
-		if(slice_color(hit_slice) == LOOSING_COLOR) {
-			loose("Don't touch RED!");
+		if(slice_color(hit_slice) == DEATH_COLOR) {
+			loose("You touched RED!");
 		}
 	}
 });
@@ -105,8 +109,9 @@ window.addEventListener("wheel", function(e) {
 });
 
 function slice_color(slice_number) {
-	var slide_randomized = Math.floor(Math.sin(slice_number) * 1000);
-	return COLORS[Math.abs(slide_randomized % COLORS.length)];
+	var slice_randomized = Math.abs(Math.sin(slice_number * 1000 + SEED));
+	var red_chance = Math.min(MAX_DEATH_SLICE_CHANCE, slice_number / (SLICES_PER_SCREEN * SCREENS_UNTIL_CHANCE_DEATHSLICE_ADDED));
+	return slice_randomized < red_chance ? DEATH_COLOR : COLORS[Math.abs(Math.floor(1000 * slice_randomized) % COLORS.length)];
 }
 
 function render_slices() {
@@ -183,3 +188,25 @@ function update_standstill(deltatime) {
 		loose("You stood still for too long!");
 	}
 }
+
+/*
+// one seed that sets all first colors different
+for(var k = 0; k < 1000; k++) {
+	SEED++;
+	var colors = []
+	for(var i = 0; i < 5; i++) {
+		colors.push(slice_color(i));
+	}
+	var bla = 0;
+	for(var i = 0; i < 5; i++) {
+		for(var j = i + 1; j < 5; j++) {
+			if(colors[i] == colors[j])
+				bla++;
+		}
+	}
+	console.log(SEED, colors, bla);
+	if(bla == 0) {
+		break;
+	}
+}
+*/
