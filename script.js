@@ -5,8 +5,8 @@ var FINGER_GRIP = 1;
 var MENU_TEXT_COLOR = "white";
 var MENU_TEXT_SIZE = 20;
 var MENU_TEXT_FONT = "arial";
-var STANDSTILL_WARNING_TIME = 0;
-var STANDSTILL_GAMEOVER = 1;
+var STANDSTILL_WARNING_TIME = 1;
+var STANDSTILL_GAMEOVER = 2;
 var DEATH_COLOR = "#db583d";
 var MENU_COLOR = DEATH_COLOR;
 var COLORS = [
@@ -20,6 +20,9 @@ var COLORS = [
 var SCREENS_UNTIL_CHANCE_DEATHSLICE_ADDED = 100;
 var MAX_DEATH_SLICE_CHANCE = 0.95;
 var SEED = 13;
+var DEATH_SHOW_TIME = 2;
+var DEATH_CIRCLE_COLOR = "black";
+var DEATH_CIRCLE_RADIUS = 25;
 
 var debug = window.location.href.indexOf("debug") != -1;
 
@@ -28,13 +31,17 @@ var ctx = document.querySelector(".maincanvas").getContext("2d");
 var appstate = {};
 function setinitialstate() {
 	appstate = {
+		running: true,
 		position: 0,	// In slices
 		speed: 0,		// In slices per second
+		death_show: false,
+		death_show_time: 0,
 		menu: false,
 		totaltime: 0,
 		fail_message: "",
 		standstill_time: 0,
-		first_scroll: false		// Can't loose until first scroll
+		first_scroll: false,		// Can't loose until first scroll
+		death_position: false
 	};
 }
 setinitialstate();
@@ -71,10 +78,12 @@ function start(x, y) {
 	maintrack.update(appstate);
 	if(appstate.menu) {
 		unloose();
-	} else {
+	}
+	if(appstate.running) {
 		appstate.speed = 0;
 		var hit_slice = Math.floor(appstate.position) + Math.floor(y / dim.slice_height);
 		if(slice_color(hit_slice) == DEATH_COLOR) {
+			appstate.death_position = [x, y];
 			loose("You touched RED!");
 		}
 	}
@@ -96,15 +105,16 @@ function unloose() {
 }
 
 function loose(message) {
-	appstate.menu = true;
+	appstate.death_show = true;
+	appstate.death_show_time = DEATH_SHOW_TIME;
 	appstate.fail_message = message;
 	appstate.speed = 0;
+	appstate.running = false;
 }
-
 
 var start_touch, touch_time;
 function move(x, y) {
-	if(!appstate.menu) { 
+	if(appstate.running) { 
 		if(touch_time && start_touch) {
 			var deltatime = ((Date.now()) - touch_time) / 1000;
 			appstate.speed = (start_touch - y) / (dim.slice_height * deltatime) * FINGER_GRIP;
@@ -129,7 +139,7 @@ window.addEventListener("mouseup", function(e) {
 });
 
 function first_scroll() {
-	if(!appstate.menu) { 
+	if(appstate.running) { 
 		if(!appstate.first_scroll)
 			appstate.first_scroll = true;
 	}
@@ -165,9 +175,7 @@ function update() {
 	var deltatime = (now - lastframetime) / 1000; // Time since last frame in seconds
 	lastframetime = now;
 	maintrack.update(appstate, deltatime);
-	if(appstate.menu) {
-		render_menu();
-	} else {
+	if(appstate.running) {
 		appstate.totaltime += deltatime;
 		update_positions(deltatime);
 		render_slices(deltatime);
@@ -179,7 +187,27 @@ function update() {
 			render_debug();
 		}
 	}
+	if(appstate.death_show) {
+		update_death_show(appstate, deltatime);
+	};
+	if(appstate.menu) {
+		render_menu();
+	}
 	window.requestAnimationFrame(update);
+}
+
+function update_death_show(appstate, deltatime) {
+	appstate.death_show_time -= deltatime;
+	if(appstate.death_show_time < 0) {
+		appstate.death_show_time = false;
+		appstate.menu = true;
+	}
+	if(appstate.death_position) {
+		ctx.beginPath();
+		ctx.arc(appstate.death_position[0], appstate.death_position[1], DEATH_CIRCLE_RADIUS, 0, 2 * Math.PI, false);
+		ctx.fillStyle = DEATH_CIRCLE_COLOR;
+		ctx.fill();
+	}
 }
 
 window.requestAnimationFrame(update);
