@@ -218,9 +218,10 @@ function render_menu() {
 	ctx.fillStyle = MENU_TEXT_COLOR;
 	ctx.textAlign = "center"; 
 	ctx.font = MENU_TEXT_SIZE + "px " + MENU_TEXT_FONT;
-	ctx.fillText(appstate.fail_message, dim.width / 2, dim.height / 4, dim.width -10);
-	ctx.fillText(Math.floor(appstate.position) + " slices @ " + Math.floor(appstate.position / appstate.totaltime) + " avarage slices / second", dim.width / 2, 2 * dim.height / 4, dim.width - 10);
-	ctx.fillText("Click to restart", dim.width / 2, 3 * dim.height / 4, dim.width - 10);
+	ctx.fillText(appstate.fail_message, dim.width / 2, dim.height / 5, dim.width - 10);
+	ctx.fillText(Math.round(appstate.position) + " slices / " + Math.round(appstate.totaltime) + " seconds", dim.width / 2, 2 * dim.height / 5, dim.width - 10);
+	ctx.fillText(Math.round(appstate.position / appstate.totaltime) + " average slices / second", dim.width / 2, 3 * dim.height / 5, dim.width - 10);
+	ctx.fillText("Click to restart", dim.width / 2, 4 * dim.height / 5, dim.width - 10);
 	ctx.textAlign = "left"; 
 }
 
